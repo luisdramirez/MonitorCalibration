@@ -38,7 +38,8 @@ def test_warmup_cannot_be_requested_from_the_command_line():
     assert error.value.code == 2
 
 
-def test_asus_e_gui_and_measurement_start_without_warmup(monkeypatch, tmp_path):
+@pytest.mark.parametrize("startup_key", ["space", "escape", "batch-simulation"])
+def test_asus_e_starts_with_instructions_without_warmup(monkeypatch, tmp_path, startup_key):
     profiles = calibrate_display.load_profiles(calibrate_display.ROOT / "display_profiles.json")
     profile = profiles["ASUS E"]
     assert (profile["width_px"], profile["height_px"]) == (1920, 1080)
@@ -49,7 +50,7 @@ def test_asus_e_gui_and_measurement_start_without_warmup(monkeypatch, tmp_path):
     levels = calibration_levels(3)
     raw = luminance_model(levels, 0.3, 250.0, 2.2)
     corrected = 0.3 + 249.7 * levels
-    key_events = []
+    key_events = [[startup_key]]
     for reading in np.concatenate((raw, corrected)):
         key_events.append(["space"])
         key_events.append([
@@ -57,6 +58,7 @@ def test_asus_e_gui_and_measurement_start_without_warmup(monkeypatch, tmp_path):
         ] + ["return"])
     events = iter(key_events)
     colors = []
+    screens = []
     waits = []
     closed = []
     original_ramp = np.linspace(0.0, 1.0, 256)[None, :].repeat(3, axis=0)
@@ -68,6 +70,11 @@ def test_asus_e_gui_and_measurement_start_without_warmup(monkeypatch, tmp_path):
     )
     field = SimpleNamespace()
     field.draw = lambda: colors.append(tuple(field.fillColor))
+
+    def text_stimulus(*args, **kwargs):
+        text = SimpleNamespace(text=kwargs.get("text", ""))
+        text.draw = lambda: screens.append(text.text)
+        return text
 
     def dialog(dictionary, **kwargs):
         assert "Warm-up Minutes" not in dictionary
@@ -89,13 +96,40 @@ def test_asus_e_gui_and_measurement_start_without_warmup(monkeypatch, tmp_path):
         visual=SimpleNamespace(
             Window=lambda **kwargs: window,
             Rect=lambda *args, **kwargs: field,
-            TextStim=lambda *args, **kwargs: SimpleNamespace(draw=lambda: None),
+            TextStim=text_stimulus,
         ),
     ))
     monkeypatch.setattr(calibrate_display, "save_figure", lambda path, *args: Path(path).write_bytes(b"mock figure"))
-    assert calibrate_display.main([
-        "--profile", "ASUS E", "--levels", "3", "--output-dir", str(tmp_path),
-    ]) == 0
+    arguments = ["--profile", "ASUS E", "--levels", "3", "--output-dir", str(tmp_path)]
+    if startup_key == "batch-simulation":
+        arguments += ["--no-gui", "--simulate-photometer", "2.2"]
+    result = calibrate_display.main(arguments)
+    if startup_key == "batch-simulation":
+        assert result == 0
+        assert screens == []
+        assert colors == []
+        assert waits == []
+        assert closed == [True]
+        record = load_calibration(
+            tmp_path / "simulations" / "SIMULATION ASUS E.json",
+            expected_display_name="SIMULATION ASUS E",
+        )
+        assert record["simulation"]["scientific_use_allowed"] is False
+        assert record["provenance"]["warmup_minutes"] == 0.0
+        return
+    assert screens[0] == calibrate_display.calibration_instructions({
+        "profile": "ASUS E", "levels": 3, "verification": True,
+        "simulate_photometer": None,
+    })
+    if startup_key == "escape":
+        assert result == 1
+        assert colors == []
+        assert waits == []
+        assert closed == [True]
+        assert not list(tmp_path.iterdir())
+        np.testing.assert_allclose(window.gammaRamp, original_ramp)
+        return
+    assert result == 0
     record = load_calibration(tmp_path / "ASUS E.json", expected_display_name="ASUS E")
     assert record["display_profile"] == profile
     assert record["provenance"]["warmup_minutes"] == 0.0

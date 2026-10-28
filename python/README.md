@@ -92,9 +92,16 @@ Before measuring:
    photometer perpendicular to the center of the display.
 
 The script has no warm-up timer or delay setting. After display setup and the
-short refresh-rate measurement, it proceeds to the measurement fields. Saved
+short refresh-rate measurement, it shows a centered instruction screen. The
+instructions explain photometer placement, reading the uniform fields, number
+entry and the selected verification procedure. Press Space to begin or Escape
+to cancel without saving. Saved
 provenance records zero minutes of scripted warm-up; it does not measure how
 long the physical monitor was powered on.
+
+GUI-based simulated rehearsals show their own instructions. With both
+`--no-gui` and `--simulate-photometer`, instructions are skipped so the rehearsal
+can run unattended.
 
 Each level appears immediately as an unmarked, full-display uniform field.
 Once the photometer reading is stable, press Space; the uniform field is then

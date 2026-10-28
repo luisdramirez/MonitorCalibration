@@ -247,6 +247,34 @@ def _safe_display_filename(display_name: str) -> str:
     return re.sub(r"[^A-Za-z0-9._ -]+", "_", display_name).strip() or "display"
 
 
+def calibration_instructions(settings: Mapping[str, Any]) -> str:
+    """Explain the selected procedure before any photometer measurement."""
+    if settings["simulate_photometer"] is not None:
+        return (
+            "Monitor calibration: simulated rehearsal\n\n"
+            "Readings are generated automatically. No photometer is needed.\n"
+            "Saved rehearsal files are not acquisition calibrations.\n\n"
+            "Press SPACE to start, or ESCAPE to cancel."
+        )
+    verification = (
+        "Repeat these steps for the corrected verification pass."
+        if settings["verification"]
+        else "No corrected verification pass is selected."
+    )
+    return (
+        f"Monitor calibration: {settings['profile']}\n\n"
+        "Place the photometer perpendicular to the center of the display.\n"
+        "Keep the room lighting and monitor settings fixed.\n\n"
+        "Each brightness level fills the screen without text.\n"
+        "Wait for a stable reading and note its value.\n"
+        "Press SPACE to open the separate entry screen.\n"
+        "Type the reading in cd/m2, then press RETURN to record it.\n"
+        "BACKSPACE edits the entry.\n\n"
+        f"Measure all {settings['levels']} levels. {verification}\n\n"
+        "Press SPACE to begin, or ESCAPE to abort without saving."
+    )
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     profiles = load_profiles(args.profiles)
@@ -358,6 +386,24 @@ def main(argv: Sequence[str] | None = None) -> int:
                     return None
                 readings.append(reading)
             return np.asarray(readings, dtype=np.float64)
+
+        # Keep command-line simulated runs available for unattended rehearsal.
+        if not (args.no_gui and settings["simulate_photometer"] is not None):
+            instructions = visual.TextStim(
+                window,
+                text=calibration_instructions(settings),
+                color="white",
+                height=22,
+                units="pix",
+                pos=(0, 0),
+                wrapWidth=0.85 * window_size[0],
+                autoLog=False,
+            )
+            event.clearEvents(eventType="keyboard")
+            instructions.draw()
+            window.flip()
+            if "escape" in event.waitKeys(keyList=["space", "escape"]):
+                return 1
 
         luminances = measure("Uncorrected", 0)
         if luminances is None:
