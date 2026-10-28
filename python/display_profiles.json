@@ -1,0 +1,56 @@
+{
+  "ASUS B": {
+    "expected_refresh_hz": 60.0,
+    "fullscreen": true,
+    "height_px": 1080,
+    "viewing_distance_cm": 45.0,
+    "width_cm": 58.8,
+    "width_px": 1920,
+    "win_type": "glfw"
+  },
+  "ASUS C": {
+    "expected_refresh_hz": 60.0,
+    "fullscreen": true,
+    "height_px": 1080,
+    "viewing_distance_cm": 44.5,
+    "width_cm": 58.8,
+    "width_px": 1920,
+    "win_type": "glfw"
+  },
+  "ASUS D": {
+    "expected_refresh_hz": 60.0,
+    "fullscreen": true,
+    "height_px": 1080,
+    "viewing_distance_cm": 42.0,
+    "width_cm": 58.8,
+    "width_px": 1920,
+    "win_type": "glfw"
+  },
+  "ASUS E": {
+    "expected_refresh_hz": 60.0,
+    "fullscreen": true,
+    "height_px": 1080,
+    "viewing_distance_cm": 73.0,
+    "width_cm": 58.8,
+    "width_px": 1920,
+    "win_type": "pyglet"
+  },
+  "Macbook": {
+    "expected_refresh_hz": 120.0,
+    "fullscreen": true,
+    "height_px": 982,
+    "viewing_distance_cm": 57.0,
+    "width_cm": 30.0,
+    "width_px": 1512,
+    "win_type": "glfw"
+  },
+  "S32D850": {
+    "expected_refresh_hz": 60.0,
+    "fullscreen": true,
+    "height_px": 1440,
+    "viewing_distance_cm": 57.0,
+    "width_cm": 70.8,
+    "width_px": 2560,
+    "win_type": "glfw"
+  }
+}
